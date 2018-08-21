@@ -4,10 +4,12 @@ Functions to scrape by season, games, and date range
 
 import hockey_scraper.json_schedule as json_schedule
 import hockey_scraper.game_scraper as game_scraper
+import hockey_scraper.combine_pbp_shifts as combine_pbp_shifts
 import hockey_scraper.shared as shared
 import pandas as pd
 import time
 import random
+import os
 
 
 # This hold the scraping errors in a string format.
@@ -104,6 +106,11 @@ def to_csv(file_name, pbp_df, shifts_df):
     
     :return: None
     """
+    # TODO: Deposit in docs_dir if exist (use os.path.exist..or whatever)
+    if shared.docs_dir:
+        pbp_file = os.path.join(shared.docs_dir, 'nhl_pbp{}.csv'.format(file_name))
+        shifts_file = os.path.join(shared.docs_dir, 'nhl_shifts{}.csv'.format(file_name))
+
     if pbp_df is not None:
         print("\nPbp data deposited in file - " + 'nhl_pbp{}.csv'.format(file_name))
         pbp_df.to_csv('nhl_pbp{}.csv'.format(file_name), sep=',', encoding='utf-8')
@@ -262,6 +269,39 @@ def scrape_games(games, if_scrape_shifts, data_format='csv', rescrape=False, doc
         return {"pbp": pbp_df, "shifts": shifts_df, "errors": errors} if if_scrape_shifts else {"pbp": pbp_df,
                                                                                                 "errors": errors}
 
+
+def merge_pbp_shifts(pbp_df, shifts_df):
+    """
+    Merge the Shifts into the Play by Play 
+    
+    Note: Only works on season level
+    
+    :param pbp_df: DataFrame of PBP data
+    :param shifts_df: DataFrame of Shift data
+    
+    :return: DataFrame of pbp with shift info embedded
+    """
+    # Must both be DataFrames
+    if not (isinstance(pbp_df, pd.DataFrame) and isinstance(shifts_df, pd.DataFrame)):
+        raise shared.HaltException("Both Arguments must be DataFrames")
+
+    # First must be pbp and second must be shifts
+    if not ('Event' in pbp_df.columns and 'Start' in shifts_df.columns):
+        raise shared.HaltException('Incorrect DataFrames given. The first argument must be the pbp DataFrame and the '
+                                   'second the shifts.')
+
+    # Check if same games in both
+    if set(pbp_df['Game_Id'].values.tolist()) != set(shifts_df['Game_Id'].values.tolist()):
+        raise shared.HaltException("Both DataFrames must contain information from the same set of games")
+
+    # Check if games in same season
+    # Get set of Game_Id/Date and just Game_Id -> If dates don't matter they'll be equal
+    game_unique = pbp_df.drop_duplicates(subset=['Game_Id', 'Date'])[['Game_Id', 'Date']].values.tolist()
+    game_id_unique = pbp_df.drop_duplicates(subset=['Game_Id'])['Game_Id'].values.tolist()
+    if len(game_unique) != len(game_id_unique):
+        raise shared.HaltException("merge_pbp_shifts only works on sets of games of the same season.")
+
+    return combine_pbp_shifts.merge_pbp_shifts(pbp_df, shifts_df)
 
 
 

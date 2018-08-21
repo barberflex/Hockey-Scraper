@@ -6,6 +6,7 @@ This file is a bunch of the shared functions or just general stuff used by the d
 
 import os
 import time
+from math import floor
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -180,6 +181,20 @@ def convert_to_seconds(minutes):
     x = time.strptime(minutes.strip(' '), '%M:%S')
 
     return datetime.timedelta(hours=x.tm_hour, minutes=x.tm_min, seconds=x.tm_sec).total_seconds()
+
+
+def convert_to_time(seconds_elapsed):
+    """
+    Convert from seconds elapsed to M:S
+    
+    :param seconds_elapsed: 0 - 1200
+    
+    :return: Time -> ex: 5:30
+    """
+    minutes = floor(seconds_elapsed/60)
+    seconds = seconds_elapsed - floor(seconds_elapsed / 60) * 60
+
+    return ':'.join([str(minutes), str(int(seconds))])
 
 
 def scrape_page(url):

@@ -113,7 +113,8 @@ def scrape_game(game_id):
     """
     shifts_json = get_shifts(game_id)
 
-    if not shifts_json:
+    # Total is the total number of shifts recorded...I just chose 25
+    if not shifts_json or shifts_json['total'] < 25:
         print("Json shifts for game {} is either not there or can't be obtained".format(game_id))
         return None
 
