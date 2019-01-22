@@ -13,6 +13,7 @@ import random
 # This may seem pointless but I have a personal reason for it (I think...)
 errors = ''
 
+# TODO(barberflex): Clean this up and make it clear which functions you should use
 
 def print_errors():
     """
@@ -179,10 +180,19 @@ def scrape_seasons(seasons, if_scrape_shifts, data_format='csv', preseason=False
         else:
             return {"pbp": pd.concat(master_pbps), "errors": errors}
 
+def scrape_game(game, scrape_shifts, data_format='csv', rescrape=False, docs_dir=None):
+    return scrape_games(
+        games=[game], 
+        if_scrape_shifts=scrape_shifts, 
+        data_format=data_format,
+        rescrape=rescrape,
+        docs_dir=docs_dir,
+    )
 
 def scrape_games(games, if_scrape_shifts, data_format='csv', rescrape=False, docs_dir=None):
     """
-    Scrape a list of games
+    Scrape a list of games.
+    You shouldn't need to scrape an arbitrary list of games. You either want a sequence, most likely defined by a date range, or a single game. If you need either of those, use the function provided here.
     
     :param games: list of game_ids
     :param if_scrape_shifts: Boolean indicating whether to also scrape shifts 
@@ -200,14 +210,20 @@ def scrape_games(games, if_scrape_shifts, data_format='csv', rescrape=False, doc
     shared.add_dir(docs_dir)
     shared.if_rescrape(rescrape)
 
-    # Create List of game_id's and dates
-    games_list = json_schedule.get_dates(games)
-
-    # Scrape pbp and shifts
-    pbp_df, shifts_df = scrape_list_of_games(games_list, if_scrape_shifts)
+    pbp_df, shifts_df = scrape_games_for_frames(games, if_scrape_shifts)
 
     if data_format.lower() == 'csv':
-        shared.to_csv(str(random.randint(1, 101)), pbp_df, shifts_df, "nhl")
+        csv_name = '-'.join(map(str, games))[:250]  # Windows file limit is 260
+        # Again, you shouldn't really need to scrape arbitrary games
+        shared.to_csv(csv_name, pbp_df, shifts_df, "nhl")
     else:
         return {"pbp": pbp_df, "shifts": shifts_df, "errors": errors} if if_scrape_shifts else {"pbp": pbp_df,
                                                                                                 "errors": errors}
+    
+def scrape_games_for_frames(games, scrape_shifts):
+    # Create List of game_id's and dates
+    games_list = json_schedule.get_dates(games)
+    
+    # Scrape pbp and shifts
+    pbp_df, shifts_df = scrape_list_of_games(games_list, if_scrape_shifts)
+    return pbp_df, shifts_df
