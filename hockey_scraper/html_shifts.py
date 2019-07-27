@@ -18,8 +18,12 @@ def get_shifts(game_id):
     :return: Shifts or None
     """
     game_id = str(game_id)
-    home_url = 'http://www.nhl.com/scores/htmlreports/{}{}/TH{}.HTM'.format(game_id[:4], int(game_id[:4])+1, game_id[4:])
-    away_url = 'http://www.nhl.com/scores/htmlreports/{}{}/TV{}.HTM'.format(game_id[:4], int(game_id[:4])+1, game_id[4:])
+    home_url = "http://www.nhl.com/scores/htmlreports/{}{}/TH{}.HTM".format(
+        game_id[:4], int(game_id[:4]) + 1, game_id[4:]
+    )
+    away_url = "http://www.nhl.com/scores/htmlreports/{}{}/TV{}.HTM".format(
+        game_id[:4], int(game_id[:4]) + 1, game_id[4:]
+    )
 
     page_info = {
         "url": home_url,
@@ -49,15 +53,19 @@ def get_soup(shifts_html):
     :return: "soupified" html and player_shifts portion of html (it's a bunch of td tags)
     """
     soup = BeautifulSoup(shifts_html, "lxml")
-    td = soup.findAll(True, {'class': ['playerHeading + border', 'lborder + bborder']})
+    td = soup.findAll(True, {"class": ["playerHeading + border", "lborder + bborder"]})
 
     if len(td) == 0:
         soup = BeautifulSoup(shifts_html, "html.parser")
-        td = soup.findAll(True, {'class': ['playerHeading + border', 'lborder + bborder']})
+        td = soup.findAll(
+            True, {"class": ["playerHeading + border", "lborder + bborder"]}
+        )
 
         if len(td) == 0:
             soup = BeautifulSoup(shifts_html, "html5lib")
-            td = soup.findAll(True, {'class': ['playerHeading + border', 'lborder + bborder']})
+            td = soup.findAll(
+                True, {"class": ["playerHeading + border", "lborder + bborder"]}
+            )
 
     return td, get_teams(soup)
 
@@ -70,12 +78,14 @@ def get_teams(soup):
     
     :return: list with team and home team
     """
-    team = soup.find('td', class_='teamHeading + border')  # Team for shifts
+    team = soup.find("td", class_="teamHeading + border")  # Team for shifts
     team = team.get_text()
 
     # Get Home Team
-    teams = soup.find_all('td', {'align': 'center', 'style': 'font-size: 10px;font-weight:bold'})
-    regex = re.compile(r'>(.*)<br/?>')
+    teams = soup.find_all(
+        "td", {"align": "center", "style": "font-size: 10px;font-weight:bold"}
+    )
+    regex = re.compile(r">(.*)<br/?>")
     home_team = regex.findall(str(teams[7]))
 
     return [team, home_team[0]]
@@ -96,27 +106,27 @@ def analyze_shifts(shift, name, team, home_team, player_ids):
     """
     shifts = dict()
 
-    regex = re.compile('\d+')  # Used to check if something contains a number
+    regex = re.compile("\d+")  # Used to check if something contains a number
 
-    shifts['Player'] = name.upper()
-    shifts['Period'] = '4' if shift[1] == 'OT' else shift[1]
-    shifts['Team'] = shared.get_team(team.strip(' '))
-    shifts['Start'] = shared.convert_to_seconds(shift[2].split('/')[0])
-    shifts['Duration'] = shared.convert_to_seconds(shift[4].split('/')[0])
+    shifts["Player"] = name.upper()
+    shifts["Period"] = "4" if shift[1] == "OT" else shift[1]
+    shifts["Team"] = shared.get_team(team.strip(" "))
+    shifts["Start"] = shared.convert_to_seconds(shift[2].split("/")[0])
+    shifts["Duration"] = shared.convert_to_seconds(shift[4].split("/")[0])
 
     # I've had problems with this one...if there are no digits the time is fucked up
-    if regex.findall(shift[3].split('/')[0]):
-        shifts['End'] = shared.convert_to_seconds(shift[3].split('/')[0])
+    if regex.findall(shift[3].split("/")[0]):
+        shifts["End"] = shared.convert_to_seconds(shift[3].split("/")[0])
     else:
-        shifts['End'] = shifts['Start'] + shifts['Duration']
+        shifts["End"] = shifts["Start"] + shifts["Duration"]
 
     try:
         if home_team == team:
-            shifts['Player_Id'] = player_ids['Home'][name.upper()]['id']
+            shifts["Player_Id"] = player_ids["Home"][name.upper()]["id"]
         else:
-            shifts['Player_Id'] = player_ids['Away'][name.upper()]['id']
+            shifts["Player_Id"] = player_ids["Away"][name.upper()]["id"]
     except KeyError:
-        shifts['Player_Id'] = ''
+        shifts["Player_Id"] = ""
 
     return shifts
 
@@ -133,7 +143,16 @@ def parse_html(html, player_ids, game_id):
     
     :return: DataFrame with info
     """
-    columns = ['Game_Id', 'Player', 'Player_Id', 'Period', 'Team', 'Start', 'End', 'Duration']
+    columns = [
+        "Game_Id",
+        "Player",
+        "Player_Id",
+        "Period",
+        "Team",
+        "Start",
+        "End",
+        "Duration",
+    ]
     df = pd.DataFrame(columns=columns)
 
     td, teams = get_soup(html)
@@ -146,28 +165,36 @@ def parse_html(html, player_ids, game_id):
     # shift #, Period, begin, end, and duration. The shift event isn't included.
     for t in td:
         t = t.get_text()
-        if ',' in t:     # If it has a comma in it we know it's a player's name...so add player to dict
+        if (
+            "," in t
+        ):  # If it has a comma in it we know it's a player's name...so add player to dict
             name = t
             # Just format the name normally...it's coded as: 'num last_name, first_name'
-            name = name.split(',')
-            name = ' '.join([name[1].strip(' '), name[0][2:].strip(' ')])
+            name = name.split(",")
+            name = " ".join([name[1].strip(" "), name[0][2:].strip(" ")])
             name = shared.fix_name(name)
             players[name] = dict()
-            players[name]['number'] = name[0][:2].strip()
-            players[name]['Shifts'] = []
+            players[name]["number"] = name[0][:2].strip()
+            players[name]["Shifts"] = []
         else:
             # Here we add all the shifts to whatever player we are up to
-            players[name]['Shifts'].extend([t])
+            players[name]["Shifts"].extend([t])
 
     for key in players.keys():
         # Create a list of lists (each length 5)...corresponds to 5 columns in html shifts
-        players[key]['Shifts'] = [players[key]['Shifts'][i:i + 5] for i in range(0, len(players[key]['Shifts']), 5)]
+        players[key]["Shifts"] = [
+            players[key]["Shifts"][i : i + 5]
+            for i in range(0, len(players[key]["Shifts"]), 5)
+        ]
 
         # Parse each shift
-        shifts = [analyze_shifts(shift, key, team, home_team, player_ids) for shift in players[key]['Shifts']]
+        shifts = [
+            analyze_shifts(shift, key, team, home_team, player_ids)
+            for shift in players[key]["Shifts"]
+        ]
         df = df.append(shifts, ignore_index=True)
 
-    df['Game_Id'] = str(game_id)[5:]
+    df["Game_Id"] = str(game_id)[5:]
     return df
 
 
@@ -180,26 +207,41 @@ def scrape_game(game_id, players):
     
     :return: DataFrame with info for the game
     """
-    columns = ['Game_Id', 'Period', 'Team', 'Player', 'Player_Id', 'Start', 'End', 'Duration']
+    columns = [
+        "Game_Id",
+        "Period",
+        "Team",
+        "Player",
+        "Player_Id",
+        "Start",
+        "End",
+        "Duration",
+    ]
 
     home_html, away_html = get_shifts(game_id)
 
     if home_html is None or away_html is None:
-        shared.print_warning("Html shifts for game {} is either not there or can't be obtained".format(game_id))
+        shared.print_warning(
+            "Html shifts for game {} is either not there or can't be obtained".format(
+                game_id
+            )
+        )
         return None
 
     try:
         away_df = parse_html(away_html, players, game_id)
         home_df = parse_html(home_html, players, game_id)
     except Exception as e:
-        shared.print_warning('Error parsing Html shifts for game {} {}'.format(game_id, e))
+        shared.print_warning(
+            "Error parsing Html shifts for game {} {}".format(game_id, e)
+        )
         return None
 
     # Combine the two
     game_df = pd.concat([away_df, home_df], ignore_index=True)
     game_df = pd.DataFrame(game_df, columns=columns)
 
-    game_df = game_df.sort_values(by=['Period', 'Start'], ascending=[True, True])
+    game_df = game_df.sort_values(by=["Period", "Start"], ascending=[True, True])
     game_df = game_df.reset_index(drop=True)
 
     return game_df

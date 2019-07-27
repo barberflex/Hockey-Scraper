@@ -39,8 +39,10 @@ def check_date_format(date):
     try:
         time.strptime(date, "%Y-%m-%d")
     except ValueError:
-        raise shared.HaltException("Error: Incorrect format given for dates. They must be given like 'yyyy-mm-dd' "
-                                   "(ex: '2016-10-01').")
+        raise shared.HaltException(
+            "Error: Incorrect format given for dates. They must be given like 'yyyy-mm-dd' "
+            "(ex: '2016-10-01')."
+        )
 
 
 class LiveGame:
@@ -65,7 +67,17 @@ class LiveGame:
     :param DataFrame prev_shifts_df: Holds the previous shift data (for just in case)
     """
 
-    def __init__(self, game_id, start_time, home_team, away_team, status, espn_id, date, if_scrape_shifts):
+    def __init__(
+        self,
+        game_id,
+        start_time,
+        home_team,
+        away_team,
+        status,
+        espn_id,
+        date,
+        if_scrape_shifts,
+    ):
         """ Constructor """
         # Given upon creation
         self.game_id = game_id
@@ -95,7 +107,11 @@ class LiveGame:
         self.prev_shifts_df = pd.DataFrame()
 
         # Object creation message
-        print("The LiveGame object for game {game_id} has been created. ".format(game_id=game_id))
+        print(
+            "The LiveGame object for game {game_id} has been created. ".format(
+                game_id=game_id
+            )
+        )
         print("Game starts in {time} seconds.".format(time=self.time_until_game()))
 
     def scrape(self, force=False):
@@ -137,9 +153,11 @@ class LiveGame:
         # Update self.api_game_status, get minutes remaining in intermission, and check if html is intermission too.
         # If both feeds are in intermission we return, otherwise we wait for the html to catch up.
         # "Intermission" is my own game status so otherwise just take whatever is in the api
-        if game_json['liveData']['linescore']['intermissionInfo']['inIntermission']:
+        if game_json["liveData"]["linescore"]["intermissionInfo"]["inIntermission"]:
             self.api_game_status = "Intermission"
-            self.intermission_time_remaining = game_json['liveData']['linescore']['intermissionInfo']["intermissionTimeRemaining"]
+            self.intermission_time_remaining = game_json["liveData"]["linescore"][
+                "intermissionInfo"
+            ]["intermissionTimeRemaining"]
 
             # If see the both says intermission and we do too, we can just safely return and not bother with scraping.
             # This will be false if the HTML hasn't updated yet to intermission
@@ -152,7 +170,9 @@ class LiveGame:
 
         # Leave if b4 game started
         if game_json["gameData"]["status"]["abstractGameState"] in ["Preview"]:
-            self.html_game_status = self.api_game_status = game_json["gameData"]["status"]["abstractGameState"]
+            self.html_game_status = self.api_game_status = game_json["gameData"][
+                "status"
+            ]["abstractGameState"]
             return
 
         # We get this the 1st time it scrapes the info (or when it's first available)
@@ -160,8 +180,10 @@ class LiveGame:
         if not self.players:
             roster = playing_roster.scrape_roster(self.game_id)
             if roster is not None:
-                self.players, _ = game_scraper.get_teams_and_players(game_json, roster, self.game_id)
-                self.head_coaches = roster['head_coaches']
+                self.players, _ = game_scraper.get_teams_and_players(
+                    game_json, roster, self.game_id
+                )
+                self.head_coaches = roster["head_coaches"]
             else:
                 return  # If we try and still can't get it we leave - Termination Reason #2
 
@@ -169,14 +191,20 @@ class LiveGame:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             # Scrape pbp - pay attention to each argument
-            self.pbp_df, self.html_game_status = game_scraper.scrape_pbp_live(self.game_id, self.date,
-                                                                              {"head_coaches": self.head_coaches},
-                                                                              game_json, self.players,
-                                                                              {"Home": self.home_team, "Away": self.away_team},
-                                                                              espn_id=self.espn_id)
+            self.pbp_df, self.html_game_status = game_scraper.scrape_pbp_live(
+                self.game_id,
+                self.date,
+                {"head_coaches": self.head_coaches},
+                game_json,
+                self.players,
+                {"Home": self.home_team, "Away": self.away_team},
+                espn_id=self.espn_id,
+            )
             # Get shifts if asked for
             if self.if_scrape_shifts:
-                self.shifts_df = game_scraper.scrape_shifts(self.game_id, self.players, self.date)
+                self.shifts_df = game_scraper.scrape_shifts(
+                    self.game_id, self.players, self.date
+                )
 
     def is_ongoing(self):
         """
@@ -191,7 +219,12 @@ class LiveGame:
         :return: Boolean
         """
         # The game is currently being played
-        if self.time_until_game() == 0 and not self.is_game_over() and not self.is_intermission() and self.pbp_df.shape[0] > 0:
+        if (
+            self.time_until_game() == 0
+            and not self.is_game_over()
+            and not self.is_intermission()
+            and self.pbp_df.shape[0] > 0
+        ):
             return True
         # If it's not being played check if game is over and if it was over for the previous event
         elif self.is_game_over() and not self.is_game_over(prev=True):
@@ -223,9 +256,17 @@ class LiveGame:
         :return: Boolean - True if over
         """
         if not prev:
-            return True if self.html_game_status == self.api_game_status == "Final" else False
+            return (
+                True
+                if self.html_game_status == self.api_game_status == "Final"
+                else False
+            )
         else:
-            return True if self.prev_html_game_status == self.prev_api_game_status == "Final" else False
+            return (
+                True
+                if self.prev_html_game_status == self.prev_api_game_status == "Final"
+                else False
+            )
 
     def is_intermission(self, prev=False):
         """
@@ -236,9 +277,19 @@ class LiveGame:
         :return: Boolean - True if yes
         """
         if not prev:
-            return True if self.html_game_status == self.api_game_status == "Intermission" else False
+            return (
+                True
+                if self.html_game_status == self.api_game_status == "Intermission"
+                else False
+            )
         else:
-            return True if self.prev_html_game_status == self.prev_api_game_status == "Intermission" else False
+            return (
+                True
+                if self.prev_html_game_status
+                == self.prev_api_game_status
+                == "Intermission"
+                else False
+            )
 
     def get_pbp(self):
         """
@@ -274,7 +325,9 @@ class ScrapeLiveGames:
     :param int pause: Amount to pause after each scraping call
     """
 
-    def __init__(self, date, preseason=False, if_scrape_shifts=False, pause=15, game_ids=list()):
+    def __init__(
+        self, date, preseason=False, if_scrape_shifts=False, pause=15, game_ids=list()
+    ):
         """
         Initialize the ScrapeLiveGames object with games for the day
         
@@ -291,7 +344,7 @@ class ScrapeLiveGames:
         self.date = date
         self.preseason = preseason
         self.if_scrape_shifts = if_scrape_shifts
-        self.live_games = self.get_games()          # Hold list of LiveGame objects for that day
+        self.live_games = self.get_games()  # Hold list of LiveGame objects for that day
         self.pause = pause
 
     def get_games(self):
@@ -303,17 +356,29 @@ class ScrapeLiveGames:
         game_objs = []
 
         # Get the initial schedule & espn game ids just in case
-        games = json_schedule.scrape_schedule(self.date, self.date, live=True, preseason=self.preseason)
+        games = json_schedule.scrape_schedule(
+            self.date, self.date, live=True, preseason=self.preseason
+        )
         games = self.get_espn_ids(games)
 
         # Only keep the games we want if the user specified games
         if self.user_game_ids:
-            games = [game for game in games if game['game_id'] in self.user_game_ids]
+            games = [game for game in games if game["game_id"] in self.user_game_ids]
 
         # Get rosters for each game
         for game in games:
-            game_objs.append(LiveGame(game['game_id'], game['start_time'], game['home_team'], game['away_team'],
-                                      game['status'], game['espn_id'], self.date, self.if_scrape_shifts))
+            game_objs.append(
+                LiveGame(
+                    game["game_id"],
+                    game["start_time"],
+                    game["home_team"],
+                    game["away_team"],
+                    game["status"],
+                    game["espn_id"],
+                    self.date,
+                    self.if_scrape_shifts,
+                )
+            )
 
         return game_objs
 
@@ -333,8 +398,11 @@ class ScrapeLiveGames:
         # Match up
         for i in range(len(games)):
             for j in range(len(espn_games)):
-                if games[i]['home_team'] in espn_games[j] or games[i]['away_team'] in espn_games[j]:
-                    games[i]['espn_id'] = game_ids[j]
+                if (
+                    games[i]["home_team"] in espn_games[j]
+                    or games[i]["away_team"] in espn_games[j]
+                ):
+                    games[i]["espn_id"] = game_ids[j]
 
         return games
 
@@ -366,7 +434,9 @@ class ScrapeLiveGames:
         non_final_games = [game for game in self.live_games if not game.is_game_over()]
 
         # Lets get all the games NOT ongoing but aren't over (so scheduled games)
-        scheduled_games = [game for game in non_final_games if game.time_until_game() > 0]
+        scheduled_games = [
+            game for game in non_final_games if game.time_until_game() > 0
+        ]
 
         # If all the non-final games haven't started yet let's find the next game
         # Get earliest in the bunch
@@ -374,7 +444,11 @@ class ScrapeLiveGames:
             min_game = min(scheduled_games, key=lambda x: x.time_until_game())
 
             if min_game.time_until_game() > 0:
-                print("\nSleeping for {} seconds until the next earliest game starts.".format(min_game.time_until_game()))
+                print(
+                    "\nSleeping for {} seconds until the next earliest game starts.".format(
+                        min_game.time_until_game()
+                    )
+                )
                 time.sleep(min_game.time_until_game())
 
     def finished(self):
@@ -391,4 +465,3 @@ class ScrapeLiveGames:
 
         # If the # of finished games == # of total games
         return True if len(self.live_games) == finished_games else False
-

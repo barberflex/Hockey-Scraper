@@ -17,7 +17,9 @@ def get_shifts(game_id):
     :return: json or None
     """
     page_info = {
-        "url": 'http://www.nhl.com/stats/rest/shiftcharts?cayenneExp=gameId={}'.format(game_id),
+        "url": "http://www.nhl.com/stats/rest/shiftcharts?cayenneExp=gameId={}".format(
+            game_id
+        ),
         "name": str(game_id),
         "type": "json_shifts",
         "season": str(game_id)[:4],
@@ -40,12 +42,7 @@ def fix_team_tricode(tricode):
     
     :return: fixed tricode
     """
-    fixed_tricodes = {
-        'TBL':  'T.B',
-        'LAK': 'L.A',
-        'NJD': 'N.J',
-        'SJS': 'S.J'
-    }
+    fixed_tricodes = {"TBL": "T.B", "LAK": "L.A", "NJD": "N.J", "SJS": "S.J"}
 
     if tricode.upper() in list(fixed_tricodes.keys()):
         return fixed_tricodes[tricode.upper()]
@@ -63,18 +60,25 @@ def parse_shift(shift):
     """
     shift_dict = dict()
 
-    name = shared.fix_name(' '.join([shift['firstName'].strip(' ').upper(), shift['lastName'].strip(' ').upper()]))
-    shift_dict['Player'] = name
-    shift_dict['Player_Id'] = shift['playerId']
-    shift_dict['Period'] = shift['period']
-    shift_dict['Team'] = fix_team_tricode(shift['teamAbbrev'])
+    name = shared.fix_name(
+        " ".join(
+            [
+                shift["firstName"].strip(" ").upper(),
+                shift["lastName"].strip(" ").upper(),
+            ]
+        )
+    )
+    shift_dict["Player"] = name
+    shift_dict["Player_Id"] = shift["playerId"]
+    shift_dict["Period"] = shift["period"]
+    shift_dict["Team"] = fix_team_tricode(shift["teamAbbrev"])
 
     # At the end of the json they list when all the goal events happened. They are the only one's which have their
     # eventDescription be not null
-    if shift['eventDescription'] is None:
-        shift_dict['Start'] = shared.convert_to_seconds(shift['startTime'])
-        shift_dict['End'] = shared.convert_to_seconds(shift['endTime'])
-        shift_dict['Duration'] = shared.convert_to_seconds(shift['duration'])
+    if shift["eventDescription"] is None:
+        shift_dict["Start"] = shared.convert_to_seconds(shift["startTime"])
+        shift_dict["End"] = shared.convert_to_seconds(shift["endTime"])
+        shift_dict["Duration"] = shared.convert_to_seconds(shift["duration"])
     else:
         shift_dict = dict()
 
@@ -90,14 +94,29 @@ def parse_json(shift_json, game_id):
     
     :return: DataFrame with info
     """
-    columns = ['Game_Id', 'Period', 'Team', 'Player', 'Player_Id', 'Start', 'End', 'Duration']
+    columns = [
+        "Game_Id",
+        "Period",
+        "Team",
+        "Player",
+        "Player_Id",
+        "Start",
+        "End",
+        "Duration",
+    ]
 
-    shifts = [parse_shift(shift) for shift in shift_json['data']]        # Go through the shifts
-    shifts = [shift for shift in shifts if shift != {}]                  # Get rid of null shifts (which happen at end)
+    shifts = [
+        parse_shift(shift) for shift in shift_json["data"]
+    ]  # Go through the shifts
+    shifts = [
+        shift for shift in shifts if shift != {}
+    ]  # Get rid of null shifts (which happen at end)
 
     df = pd.DataFrame(shifts, columns=columns)
-    df['Game_Id'] = str(game_id)[5:]
-    df = df.sort_values(by=['Period', 'Start'], ascending=[True, True])  # Sort by period by time
+    df["Game_Id"] = str(game_id)[5:]
+    df = df.sort_values(
+        by=["Period", "Start"], ascending=[True, True]
+    )  # Sort by period by time
     df = df.reset_index(drop=True)
 
     return df
@@ -114,13 +133,19 @@ def scrape_game(game_id):
     shifts_json = get_shifts(game_id)
 
     if not shifts_json:
-        shared.print_warning("Json shifts for game {} is either not there or can't be obtained".format(game_id))
+        shared.print_warning(
+            "Json shifts for game {} is either not there or can't be obtained".format(
+                game_id
+            )
+        )
         return None
 
     try:
         game_df = parse_json(shifts_json, game_id)
     except Exception as e:
-        shared.print_warning('Error parsing Json shifts for game {} {}'.format(game_id, e))
+        shared.print_warning(
+            "Error parsing Json shifts for game {} {}".format(game_id, e)
+        )
         return None
 
     return game_df if not game_df.empty else None

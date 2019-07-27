@@ -18,7 +18,9 @@ def get_roster(game_id):
     game_id = str(game_id)
 
     page_info = {
-        "url": 'http://www.nhl.com/scores/htmlreports/{}{}/RO{}.HTM'.format(game_id[:4], int(game_id[:4]) + 1, game_id[4:]),
+        "url": "http://www.nhl.com/scores/htmlreports/{}{}/RO{}.HTM".format(
+            game_id[:4], int(game_id[:4]) + 1, game_id[4:]
+        ),
         "name": game_id,
         "type": "html_roster",
         "season": game_id[:4],
@@ -61,10 +63,10 @@ def fix_name(player):
     
     :return: fixed list
     """
-    if player[2].find('(A)') != -1:
-        player[2] = player[2][:player[2].find('(A)')].strip()
-    elif player[2].find('(C)') != -1:
-        player[2] = player[2][:player[2].find('(C)')].strip()
+    if player[2].find("(A)") != -1:
+        player[2] = player[2][: player[2].find("(A)")].strip()
+    elif player[2].find("(C)") != -1:
+        player[2] = player[2][: player[2].find("(C)")].strip()
 
     return player
 
@@ -77,18 +79,15 @@ def get_coaches(soup):
     
     :return: dict of coaches for game
     """
-    coaches = soup.find_all('tr', {'id': "HeadCoaches"})
+    coaches = soup.find_all("tr", {"id": "HeadCoaches"})
 
     # If it picks up nothing just return the empty list
     if not coaches:
         return coaches
 
-    coaches = coaches[0].find_all('td')
+    coaches = coaches[0].find_all("td")
 
-    return {
-        'Away': coaches[1].get_text(),
-        'Home': coaches[3].get_text()
-    }
+    return {"Away": coaches[1].get_text(), "Home": coaches[3].get_text()}
 
 
 def get_players(soup):
@@ -99,7 +98,16 @@ def get_players(soup):
     
     :return: dict for home and away players
     """
-    tables = soup.findAll('table', {'align': 'center', 'border': '0', 'cellpadding': '0', 'cellspacing': '0', 'width': '100%'})
+    tables = soup.findAll(
+        "table",
+        {
+            "align": "center",
+            "border": "0",
+            "cellpadding": "0",
+            "cellspacing": "0",
+            "width": "100%",
+        },
+    )
 
     # If it picks up nothing just return the empty list
     if not tables:
@@ -115,15 +123,19 @@ def get_players(soup):
     """
 
     del tables[0]
-    player_info = [table.find_all('td') for table in tables]
+    player_info = [table.find_all("td") for table in tables]
 
     player_info = [[x.get_text() for x in group] for group in player_info]
 
     # Make list of list of 3 each. The three are: number, position, name (in that order)
-    player_info = [[group[i:i+3] for i in range(0, len(group), 3)] for group in player_info]
+    player_info = [
+        [group[i : i + 3] for i in range(0, len(group), 3)] for group in player_info
+    ]
 
     # Get rid of header column
-    player_info = [[player for player in group if player[0] != '#'] for group in player_info]
+    player_info = [
+        [player for player in group if player[0] != "#"] for group in player_info
+    ]
 
     # Add whether the player was a scratch
     # 2 and 3 hold the scratches
@@ -134,21 +146,21 @@ def get_players(soup):
             else:
                 player_info[i][j].append(False)
 
-    players = {'Away': player_info[0], 'Home': player_info[1]}
+    players = {"Away": player_info[0], "Home": player_info[1]}
 
     # Scratches aren't always included
     if len(player_info) == 4:
-        players['Away'] += player_info[2]
-        players['Home'] += player_info[3]
+        players["Away"] += player_info[2]
+        players["Home"] += player_info[3]
 
     # For those with (A) or (C) in name field get rid of it
     # First condition is to control when we get whitespace as one of the indices
-    players['Away'] = [fix_name(i) if i[0] != u'\xa0' else i for i in players['Away']]
-    players['Home'] = [fix_name(i) if i[0] != u'\xa0' else i for i in players['Home']]
+    players["Away"] = [fix_name(i) if i[0] != u"\xa0" else i for i in players["Away"]]
+    players["Home"] = [fix_name(i) if i[0] != u"\xa0" else i for i in players["Home"]]
 
     # Get rid when just whitespace
-    players['Away'] = [i for i in players['Away'] if i[0] != u'\xa0']
-    players['Home'] = [i for i in players['Home'] if i[0] != u'\xa0']
+    players["Away"] = [i for i in players["Away"] if i[0] != u"\xa0"]
+    players["Home"] = [i for i in players["Home"] if i[0] != u"\xa0"]
 
     return players
 
@@ -164,13 +176,17 @@ def scrape_roster(game_id):
     roster = get_roster(game_id)
 
     if not roster:
-        shared.print_warning("Roster for game {} is either not there or can't be obtained".format(game_id))
+        shared.print_warning(
+            "Roster for game {} is either not there or can't be obtained".format(
+                game_id
+            )
+        )
         return None
 
     try:
         players, head_coaches = get_content(roster)
     except Exception as e:
-        shared.print_warning('Error parsing Roster for game {} {}'.format(game_id, e))
+        shared.print_warning("Error parsing Roster for game {} {}".format(game_id, e))
         return None
 
-    return {'players': players, 'head_coaches': head_coaches}
+    return {"players": players, "head_coaches": head_coaches}

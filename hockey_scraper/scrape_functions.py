@@ -11,9 +11,10 @@ from typing import List
 
 # This hold the scraping errors in a string format.
 # This may seem pointless but I have a personal reason for it (I think...)
-errors = ''
+errors = ""
 
 # TODO(barberflex): Clean this up and make it clear which functions you should use
+
 
 def print_errors():
     """
@@ -27,34 +28,34 @@ def print_errors():
     global errors
 
     if game_scraper.broken_pbp_games:
-        print('\nBroken pbp:')
-        errors += 'Broken pbp:'
+        print("\nBroken pbp:")
+        errors += "Broken pbp:"
         for x in game_scraper.broken_pbp_games:
             print(x[0], x[1])
-            errors = ' '.join([errors, str(x[0]), ","])
+            errors = " ".join([errors, str(x[0]), ","])
 
     if game_scraper.broken_shifts_games:
-        print('\nBroken shifts:')
-        errors += 'Broken shifts:'
+        print("\nBroken shifts:")
+        errors += "Broken shifts:"
         for x in game_scraper.broken_shifts_games:
             print(x[0], x[1])
-            errors = ' '.join([errors, str(x[0]), ","])
+            errors = " ".join([errors, str(x[0]), ","])
 
     if game_scraper.players_missing_ids:
         print("\nPlayers missing ID's:")
         errors += "Players missing ID's:"
         for x in game_scraper.players_missing_ids:
             print(x[0], x[1])
-            errors = ' '.join([errors, str(x[0]), ","])
+            errors = " ".join([errors, str(x[0]), ","])
 
     if game_scraper.missing_coords:
-        print('\nGames missing coordinates:')
-        errors += 'Games missing coordinates:'
+        print("\nGames missing coordinates:")
+        errors += "Games missing coordinates:"
         for x in game_scraper.missing_coords:
             print(x[0], x[1])
-            errors = ' '.join([errors, str(x[0]), ","])
+            errors = " ".join([errors, str(x[0]), ","])
 
-    print('\n')
+    print("\n")
 
     # Clear them all out for the next call
     game_scraper.broken_shifts_games = []
@@ -76,7 +77,9 @@ def scrape_list_of_games(games, if_scrape_shifts):
     shifts_dfs = []
 
     for game in games:
-        pbp_df, shifts_df = game_scraper.scrape_game(str(game["game_id"]), game["date"], if_scrape_shifts)
+        pbp_df, shifts_df = game_scraper.scrape_game(
+            str(game["game_id"]), game["date"], if_scrape_shifts
+        )
         if pbp_df is not None:
             pbp_dfs.extend([pbp_df])
         if shifts_df is not None:
@@ -102,7 +105,15 @@ def scrape_list_of_games(games, if_scrape_shifts):
     return pbp_df, shifts_df
 
 
-def scrape_date_range(from_date, to_date, if_scrape_shifts, data_format='csv', preseason=False, rescrape=False, docs_dir=None):
+def scrape_date_range(
+    from_date,
+    to_date,
+    if_scrape_shifts,
+    data_format="csv",
+    preseason=False,
+    rescrape=False,
+    docs_dir=None,
+):
     """
     Scrape games in given date range
     
@@ -129,14 +140,24 @@ def scrape_date_range(from_date, to_date, if_scrape_shifts, data_format='csv', p
     games = json_schedule.scrape_schedule(from_date, to_date, preseason)
     pbp_df, shifts_df = scrape_list_of_games(games, if_scrape_shifts)
 
-    if data_format.lower() == 'csv':
-        shared.to_csv(from_date+'--'+to_date, pbp_df, shifts_df, "nhl")
+    if data_format.lower() == "csv":
+        shared.to_csv(from_date + "--" + to_date, pbp_df, shifts_df, "nhl")
     else:
-        return {"pbp": pbp_df, "shifts": shifts_df, "errors": errors} if if_scrape_shifts else {"pbp": pbp_df,
-                                                                                                "errors": errors}
+        return (
+            {"pbp": pbp_df, "shifts": shifts_df, "errors": errors}
+            if if_scrape_shifts
+            else {"pbp": pbp_df, "errors": errors}
+        )
 
 
-def scrape_seasons(seasons, if_scrape_shifts, data_format='csv', preseason=False, rescrape=False, docs_dir=None):
+def scrape_seasons(
+    seasons,
+    if_scrape_shifts,
+    data_format="csv",
+    preseason=False,
+    rescrape=False,
+    docs_dir=None,
+):
     """
     Given list of seasons it scrapes all the seasons 
     
@@ -162,29 +183,33 @@ def scrape_seasons(seasons, if_scrape_shifts, data_format='csv', preseason=False
     master_pbps, master_shifts = [], []
 
     for season in seasons:
-        from_date = '-'.join([str(season), '9', '1'])
-        to_date = '-'.join([str(season + 1), '7', '1'])
+        from_date = "-".join([str(season), "9", "1"])
+        to_date = "-".join([str(season + 1), "7", "1"])
 
         games = json_schedule.scrape_schedule(from_date, to_date, preseason)
         pbp_df, shifts_df = scrape_list_of_games(games, if_scrape_shifts)
 
-        if data_format.lower() == 'csv':
-            shared.to_csv(str(season)+str(season+1), pbp_df, shifts_df, "nhl")
+        if data_format.lower() == "csv":
+            shared.to_csv(str(season) + str(season + 1), pbp_df, shifts_df, "nhl")
         else:
             master_pbps.append(pbp_df)
             master_shifts.append(shifts_df)
 
-    if data_format.lower() == 'pandas':
+    if data_format.lower() == "pandas":
         if if_scrape_shifts:
-            return {"pbp": pd.concat(master_pbps), "shifts": pd.concat(master_shifts), "errors": errors}
+            return {
+                "pbp": pd.concat(master_pbps),
+                "shifts": pd.concat(master_shifts),
+                "errors": errors,
+            }
         else:
             return {"pbp": pd.concat(master_pbps), "errors": errors}
 
 
-def scrape_game(game, scrape_shifts, data_format='csv', rescrape=False, docs_dir=None):
+def scrape_game(game, scrape_shifts, data_format="csv", rescrape=False, docs_dir=None):
     return scrape_games(
-        games=[game], 
-        if_scrape_shifts=scrape_shifts, 
+        games=[game],
+        if_scrape_shifts=scrape_shifts,
         data_format=data_format,
         rescrape=rescrape,
         docs_dir=docs_dir,
@@ -192,11 +217,11 @@ def scrape_game(game, scrape_shifts, data_format='csv', rescrape=False, docs_dir
 
 
 def scrape_games(
-        games: List[str],
-        if_scrape_shifts: bool,
-        data_format: str ='csv',
-        rescrape: bool = False,
-        docs_dir: str = None
+    games: List[str],
+    if_scrape_shifts: bool,
+    data_format: str = "csv",
+    rescrape: bool = False,
+    docs_dir: str = None,
 ):
     """
     Scrape a list of games.
@@ -220,18 +245,22 @@ def scrape_games(
 
     pbp_df, shifts_df = scrape_games_for_frames(games, if_scrape_shifts)
 
-    if data_format.lower() == 'csv':
-        csv_name = '-'.join(map(str, games))[:250]  # Windows file limit is 260
+    if data_format.lower() == "csv":
+        csv_name = "-".join(map(str, games))[:250]  # Windows file limit is 260
         # Again, you shouldn't really need to scrape arbitrary games
         shared.to_csv(csv_name, pbp_df, shifts_df, "nhl")
     else:
-        return {"pbp": pbp_df, "shifts": shifts_df, "errors": errors} if if_scrape_shifts else {"pbp": pbp_df,
-                                                                                                "errors": errors}
-    
+        return (
+            {"pbp": pbp_df, "shifts": shifts_df, "errors": errors}
+            if if_scrape_shifts
+            else {"pbp": pbp_df, "errors": errors}
+        )
+
+
 def scrape_games_for_frames(games: List[str], scrape_shifts: bool):
     # Create List of game_id's and dates
     games_list = json_schedule.get_dates(games)
-    
+
     # Scrape pbp and shifts
     pbp_df, shifts_df = scrape_list_of_games(games_list, scrape_shifts)
     return pbp_df, shifts_df

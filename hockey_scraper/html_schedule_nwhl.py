@@ -46,7 +46,7 @@ def get_date_games(date_info):
     :return: All games for that day
     """
     base = "https://www.nwhl.zone/"
-    response = get_schedule(base + date_info['url'], date_info['date'])
+    response = get_schedule(base + date_info["url"], date_info["date"])
     soup = BeautifulSoup(response, "lxml")
 
     tables = soup.find_all("table", {"class": "statTable sortable noSortImages"})
@@ -64,17 +64,19 @@ def get_date_games(date_info):
 
         # Only append if the game already started/finished
         # If scheduled will have starting time
-        if status == '':
-            games.append({
-                "game_id": game_id_regex.findall(tr['id'])[0],
-                "date": date_info['date'],
-                "sub_type": date_info['sub_type'],
-                "away_team": tds[0].text.strip(),
-                "away_score": tds[1].text.strip(),
-                "home_team": tds[2].text.strip(),
-                "home_score": tds[3].text.strip(),
-                "location": tds[4].text.strip(),
-            })
+        if status == "":
+            games.append(
+                {
+                    "game_id": game_id_regex.findall(tr["id"])[0],
+                    "date": date_info["date"],
+                    "sub_type": date_info["sub_type"],
+                    "away_team": tds[0].text.strip(),
+                    "away_score": tds[1].text.strip(),
+                    "home_team": tds[2].text.strip(),
+                    "home_score": tds[3].text.strip(),
+                    "location": tds[4].text.strip(),
+                }
+            )
 
     return games
 
@@ -97,11 +99,16 @@ def get_sub_dates(url, season, sub_type):
     dates = []
     for month in lis:
         for day in month:
-            dates.append({
-                "date": datetime.datetime.strptime(str(day['id'])[str(day['id']).find("day_") + len("days"):], '%Y_%m_%d').strftime('%Y-%m-%d'),
-                "url": day.find("a")['href'],
-                "sub_type": sub_type.strip()
-            })
+            dates.append(
+                {
+                    "date": datetime.datetime.strptime(
+                        str(day["id"])[str(day["id"]).find("day_") + len("days") :],
+                        "%Y_%m_%d",
+                    ).strftime("%Y-%m-%d"),
+                    "url": day.find("a")["href"],
+                    "sub_type": sub_type.strip(),
+                }
+            )
 
     return dates
 
@@ -123,12 +130,19 @@ def get_dates(from_date, to_date):
     soup = BeautifulSoup(get_schedule(seed_url, date_range + "-seed"), "lxml")
 
     # By Season (e.g. 2017-2018)
-    sub_seasons = {season['label']: season.find_all("option") for season in soup.find_all("optgroup")}
+    sub_seasons = {
+        season["label"]: season.find_all("option")
+        for season in soup.find_all("optgroup")
+    }
 
     # Add Current season (here 2015 subs) - not found in above dropdown
     cur_season_subs = soup.find_all("div", {"class": "currentSeason"})[0].find_all("a")
-    cur_season_subs = [sub for sub in cur_season_subs if sub['class'][0] != "close"]
-    cur_season = soup.find_all("div", {"class": "currentSeason"})[0].find("span").text.strip()[:9]
+    cur_season_subs = [sub for sub in cur_season_subs if sub["class"][0] != "close"]
+    cur_season = (
+        soup.find_all("div", {"class": "currentSeason"})[0]
+        .find("span")
+        .text.strip()[:9]
+    )
     sub_seasons[cur_season] = cur_season_subs
 
     # Season o first date to season of last date
@@ -144,12 +158,14 @@ def get_dates(from_date, to_date):
             # Get dates for season-sub_type combo
             # Href and value are due to current season
             try:
-                sub_dates = get_sub_dates(base + sub['value'], str(season), sub.text)
+                sub_dates = get_sub_dates(base + sub["value"], str(season), sub.text)
             except KeyError:
-                sub_dates = get_sub_dates(base + sub['href'], str(season), sub.text)
+                sub_dates = get_sub_dates(base + sub["href"], str(season), sub.text)
             for sub_date in sub_dates:
                 # Only add dates in range
-                if date_obj(sub_date['date']) >= date_obj(from_date) and date_obj(sub_date['date']) <= date_obj(to_date):
+                if date_obj(sub_date["date"]) >= date_obj(from_date) and date_obj(
+                    sub_date["date"]
+                ) <= date_obj(to_date):
                     dates.append(sub_date)
 
     return dates
@@ -169,4 +185,3 @@ def scrape_dates(from_date, to_date):
         games.extend(get_date_games(game_date))
 
     return games
-

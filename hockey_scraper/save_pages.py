@@ -18,12 +18,31 @@ def create_file_path(file_info):
     :return: path 
     """
     # Shitty fix for when you already have it saved but don't have nwhl folders
-    if 'nwhl' in file_info['type']:
-        if not os.path.isdir(os.path.join(file_info['dir'], '/'.join(['docs', str(file_info['season']), file_info['type']]))):
-            os.mkdir(os.path.join(file_info['dir'], '/'.join(['docs', str(file_info['season']), file_info['type']])))
+    if "nwhl" in file_info["type"]:
+        if not os.path.isdir(
+            os.path.join(
+                file_info["dir"],
+                "/".join(["docs", str(file_info["season"]), file_info["type"]]),
+            )
+        ):
+            os.mkdir(
+                os.path.join(
+                    file_info["dir"],
+                    "/".join(["docs", str(file_info["season"]), file_info["type"]]),
+                )
+            )
 
-    return os.path.join(file_info['dir'],
-                        '/'.join(['docs', str(file_info['season']), file_info['type'], file_info['name'] + ".txt"]))
+    return os.path.join(
+        file_info["dir"],
+        "/".join(
+            [
+                "docs",
+                str(file_info["season"]),
+                file_info["type"],
+                file_info["name"] + ".txt",
+            ]
+        ),
+    )
 
 
 def create_season_dirs(season):
@@ -52,7 +71,7 @@ def create_season_dirs(season):
     os.mkdir("espn_scoreboard")
 
     # Move back to the previous directory
-    os.chdir('..')
+    os.chdir("..")
 
 
 def check_file_exists(file_info):
@@ -65,12 +84,14 @@ def check_file_exists(file_info):
     :return: Boolean - True if it exists
     """
     # Create the docs subdir if it doesn't exist
-    if not os.path.isdir(os.path.join(file_info['dir'], 'docs')):
+    if not os.path.isdir(os.path.join(file_info["dir"], "docs")):
         os.mkdir("docs")
 
     # Check if the folder for the season for the given game was created yet...if not create it
-    if not os.path.isdir(os.path.join(file_info['dir'], '/'.join(['docs', str(file_info['season'])]))):
-        create_season_dirs(file_info['season'])
+    if not os.path.isdir(
+        os.path.join(file_info["dir"], "/".join(["docs", str(file_info["season"])]))
+    ):
+        create_season_dirs(file_info["season"])
 
     return os.path.isfile(create_file_path(file_info))
 
@@ -84,8 +105,8 @@ def get_page(file_info):
 
     :return: Response or None
     """
-    with open(create_file_path(file_info), 'r') as my_file:
-        return my_file.read().replace('\n', '')
+    with open(create_file_path(file_info), "r") as my_file:
+        return my_file.read().replace("\n", "")
 
 
 def save_page(page, file_info, docs_dir):
@@ -102,6 +123,6 @@ def save_page(page, file_info, docs_dir):
 
     :return: None
     """
-    if docs_dir is not None and page is not None and page != '':
-        with open(create_file_path(file_info), 'w') as file:
+    if docs_dir is not None and page is not None and page != "":
+        with open(create_file_path(file_info), "w") as file:
             file.write(page)

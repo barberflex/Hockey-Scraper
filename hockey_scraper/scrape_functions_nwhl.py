@@ -8,14 +8,56 @@ import pandas as pd
 import random
 
 # All columns for the pbp
-cols = ['game_id', 'date', 'season', 'period', 'seconds_elapsed', 'event', 'ev_team', 'home_team', 'away_team',
-        'p1_name', 'p1_id', 'p2_name', 'p2_id', 'p3_name', 'p3_id',
-        "homePlayer1", "homePlayer1_id", "homePlayer2", "homePlayer2_id", "homePlayer3", "homePlayer3_id",
-        "homePlayer4", "homePlayer4_id", "homePlayer5", "homePlayer5_id", "homePlayer6", "homePlayer6_id",
-        "awayPlayer1", "awayPlayer1_id", "awayPlayer2", "awayPlayer2_id", "awayPlayer3", "awayPlayer3_id",
-        "awayPlayer4", "awayPlayer4_id", "awayPlayer5", "awayPlayer5_id", "awayPlayer6", "awayPlayer6_id",
-        'home_goalie', 'home_goalie_id', 'away_goalie', 'away_goalie_id', 'details', 'home_score', 'away_score',
-        'xC', 'yC']
+cols = [
+    "game_id",
+    "date",
+    "season",
+    "period",
+    "seconds_elapsed",
+    "event",
+    "ev_team",
+    "home_team",
+    "away_team",
+    "p1_name",
+    "p1_id",
+    "p2_name",
+    "p2_id",
+    "p3_name",
+    "p3_id",
+    "homePlayer1",
+    "homePlayer1_id",
+    "homePlayer2",
+    "homePlayer2_id",
+    "homePlayer3",
+    "homePlayer3_id",
+    "homePlayer4",
+    "homePlayer4_id",
+    "homePlayer5",
+    "homePlayer5_id",
+    "homePlayer6",
+    "homePlayer6_id",
+    "awayPlayer1",
+    "awayPlayer1_id",
+    "awayPlayer2",
+    "awayPlayer2_id",
+    "awayPlayer3",
+    "awayPlayer3_id",
+    "awayPlayer4",
+    "awayPlayer4_id",
+    "awayPlayer5",
+    "awayPlayer5_id",
+    "awayPlayer6",
+    "awayPlayer6_id",
+    "home_goalie",
+    "home_goalie_id",
+    "away_goalie",
+    "away_goalie_id",
+    "details",
+    "home_score",
+    "away_score",
+    "xC",
+    "yC",
+]
 
 # Hold any games we didn't scrape for any reason
 broken_games = []
@@ -29,7 +71,7 @@ def print_errors():
     """
     global broken_games
     if broken_games:
-        print('\nBroken pbp:')
+        print("\nBroken pbp:")
         for x in broken_games:
             print(x)
 
@@ -46,7 +88,7 @@ def scrape_list_of_games(games):
     """
     pbp_dfs = []
     for game in games:
-        print(' '.join(['Scraping NWHL Game ', str(game)]))
+        print(" ".join(["Scraping NWHL Game ", str(game)]))
         pbp_df = json_pbp.scrape_pbp(game)
         if not pbp_df.empty:
             pbp_dfs.append(pbp_df)
@@ -60,7 +102,7 @@ def scrape_list_of_games(games):
     return None
 
 
-def scrape_games(games, data_format='csv', rescrape=False, docs_dir=None):
+def scrape_games(games, data_format="csv", rescrape=False, docs_dir=None):
     """
     Scrape a list of games
 
@@ -82,13 +124,15 @@ def scrape_games(games, data_format='csv', rescrape=False, docs_dir=None):
     pbp_df = scrape_list_of_games(games)
     print_errors()
 
-    if data_format.lower() == 'csv':
+    if data_format.lower() == "csv":
         shared.to_csv(str(random.randint(1, 101)), pbp_df, None, "nwhl")
     else:
         return pbp_df
 
 
-def scrape_date_range(from_date, to_date, data_format='csv', rescrape=False, docs_dir=None):
+def scrape_date_range(
+    from_date, to_date, data_format="csv", rescrape=False, docs_dir=None
+):
     """
     Scrape games in given date range
 
@@ -111,22 +155,27 @@ def scrape_date_range(from_date, to_date, data_format='csv', rescrape=False, doc
 
     # Get dates and convert to just a list of game ids
     games = html_schedule.scrape_dates(from_date, to_date)
-    game_ids = [game['game_id'] for game in games]
+    game_ids = [game["game_id"] for game in games]
 
     # Scrape all PBP
     pbp_df = scrape_list_of_games(game_ids)
 
     # Merge in subtype
-    pbp_df = pd.merge(pbp_df, pd.DataFrame(games, columns=['game_id', 'sub_type']), on="game_id", how="left")
+    pbp_df = pd.merge(
+        pbp_df,
+        pd.DataFrame(games, columns=["game_id", "sub_type"]),
+        on="game_id",
+        how="left",
+    )
 
     print_errors()
-    if data_format.lower() == 'csv':
-        shared.to_csv(from_date + '--' + to_date, pbp_df, None, "nwhl")
+    if data_format.lower() == "csv":
+        shared.to_csv(from_date + "--" + to_date, pbp_df, None, "nwhl")
     else:
         return pbp_df
 
 
-def scrape_seasons(seasons, data_format='csv', rescrape=False, docs_dir=None):
+def scrape_seasons(seasons, data_format="csv", rescrape=False, docs_dir=None):
     """
     Given list of seasons it scrapes all the seasons 
 
@@ -149,25 +198,29 @@ def scrape_seasons(seasons, data_format='csv', rescrape=False, docs_dir=None):
     master_pbps = []
 
     for season in seasons:
-        from_date = '-'.join([str(season), '9', '1'])
-        to_date = '-'.join([str(season + 1), '8', '31'])
+        from_date = "-".join([str(season), "9", "1"])
+        to_date = "-".join([str(season + 1), "8", "31"])
 
         # Get dates and convert to just a list of game ids
         games = html_schedule.scrape_dates(from_date, to_date)
-        game_ids = [game['game_id'] for game in games]
+        game_ids = [game["game_id"] for game in games]
 
         # Scrape all PBP
         pbp_df = scrape_list_of_games(game_ids)
 
         # Merge in subtype
-        pbp_df = pd.merge(pbp_df, pd.DataFrame(games, columns=['game_id', 'sub_type']), on="game_id", how="left")
+        pbp_df = pd.merge(
+            pbp_df,
+            pd.DataFrame(games, columns=["game_id", "sub_type"]),
+            on="game_id",
+            how="left",
+        )
 
-        if data_format.lower() == 'csv':
+        if data_format.lower() == "csv":
             shared.to_csv(str(season) + str(season + 1), pbp_df, None, "nwhl")
         else:
             master_pbps.append(pbp_df)
 
     print_errors()
-    if data_format.lower() == 'pandas':
+    if data_format.lower() == "pandas":
         return pd.concat(master_pbps, sort=True)
-
