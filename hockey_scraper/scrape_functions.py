@@ -6,8 +6,8 @@ import hockey_scraper.json_schedule as json_schedule
 import hockey_scraper.game_scraper as game_scraper
 import hockey_scraper.shared as shared
 import pandas as pd
-import random
 
+from typing import List
 
 # This hold the scraping errors in a string format.
 # This may seem pointless but I have a personal reason for it (I think...)
@@ -180,6 +180,7 @@ def scrape_seasons(seasons, if_scrape_shifts, data_format='csv', preseason=False
         else:
             return {"pbp": pd.concat(master_pbps), "errors": errors}
 
+
 def scrape_game(game, scrape_shifts, data_format='csv', rescrape=False, docs_dir=None):
     return scrape_games(
         games=[game], 
@@ -189,14 +190,21 @@ def scrape_game(game, scrape_shifts, data_format='csv', rescrape=False, docs_dir
         docs_dir=docs_dir,
     )
 
-def scrape_games(games, if_scrape_shifts, data_format='csv', rescrape=False, docs_dir=None):
+
+def scrape_games(
+        games: List[str],
+        if_scrape_shifts: bool,
+        data_format: str ='csv',
+        rescrape: bool = False,
+        docs_dir: str = None
+):
     """
     Scrape a list of games.
     You shouldn't need to scrape an arbitrary list of games. You either want a sequence, most likely defined by a date range, or a single game. If you need either of those, use the function provided here.
     
     :param games: list of game_ids
     :param if_scrape_shifts: Boolean indicating whether to also scrape shifts 
-    :param data_format: format you want data in - csv or pandas (csv is default)
+    :param dalta_format: format you want data in - csv or pandas (csv is default)
     :param rescrape: If you want to rescrape pages already scraped. Only applies if you supply a docs dir.
     :param docs_dir: Directory that either contains previously scraped docs or one that you want them to be deposited 
                      in after scraping
@@ -220,10 +228,10 @@ def scrape_games(games, if_scrape_shifts, data_format='csv', rescrape=False, doc
         return {"pbp": pbp_df, "shifts": shifts_df, "errors": errors} if if_scrape_shifts else {"pbp": pbp_df,
                                                                                                 "errors": errors}
     
-def scrape_games_for_frames(games, scrape_shifts):
+def scrape_games_for_frames(games: List[str], scrape_shifts: bool):
     # Create List of game_id's and dates
     games_list = json_schedule.get_dates(games)
     
     # Scrape pbp and shifts
-    pbp_df, shifts_df = scrape_list_of_games(games_list, if_scrape_shifts)
+    pbp_df, shifts_df = scrape_list_of_games(games_list, scrape_shifts)
     return pbp_df, shifts_df
