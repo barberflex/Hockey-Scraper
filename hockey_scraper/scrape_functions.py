@@ -7,13 +7,20 @@ import hockey_scraper.game_scraper as game_scraper
 import hockey_scraper.shared as shared
 import pandas as pd
 
-from typing import List
+from typing import List, Optional
+from typing_extensions import TypedDict
 
 # This hold the scraping errors in a string format.
 # This may seem pointless but I have a personal reason for it (I think...)
 errors = ""
 
 # TODO(barberflex): Clean this up and make it clear which functions you should use
+
+
+class ScrapeResult(TypedDict):
+    pbp: pd.DataFrame
+    shifts: Optional[pd.DataFrame]
+    error: Optional[str]
 
 
 def print_errors():
@@ -206,7 +213,13 @@ def scrape_seasons(
             return {"pbp": pd.concat(master_pbps), "errors": errors}
 
 
-def scrape_game(game, scrape_shifts, data_format="csv", rescrape=False, docs_dir=None):
+def scrape_game(
+    game: str,
+    scrape_shifts: bool,
+    data_format: str = "csv",
+    rescrape: bool = False,
+    docs_dir: str = None,
+) -> ScrapeResult:
     return scrape_games(
         games=[game],
         if_scrape_shifts=scrape_shifts,
@@ -222,14 +235,14 @@ def scrape_games(
     data_format: str = "csv",
     rescrape: bool = False,
     docs_dir: str = None,
-):
+) -> Optional[ScrapeResult]:
     """
     Scrape a list of games.
     You shouldn't need to scrape an arbitrary list of games. You either want a sequence, most likely defined by a date range, or a single game. If you need either of those, use the function provided here.
     
     :param games: list of game_ids
     :param if_scrape_shifts: Boolean indicating whether to also scrape shifts 
-    :param dalta_format: format you want data in - csv or pandas (csv is default)
+    :param data_format: format you want data in - csv or pandas (csv is default)
     :param rescrape: If you want to rescrape pages already scraped. Only applies if you supply a docs dir.
     :param docs_dir: Directory that either contains previously scraped docs or one that you want them to be deposited 
                      in after scraping
@@ -250,11 +263,14 @@ def scrape_games(
         # Again, you shouldn't really need to scrape arbitrary games
         shared.to_csv(csv_name, pbp_df, shifts_df, "nhl")
     else:
-        return (
-            {"pbp": pbp_df, "shifts": shifts_df, "errors": errors}
-            if if_scrape_shifts
-            else {"pbp": pbp_df, "errors": errors}
-        )
+        return ScrapeResult(pbp=pbp_df, shifts=shifts_df, errors=errors)
+
+
+def scrape_game_to_frame(game: str, scrape_shifts: bool = False) -> ScrapeResult:
+    result = scrape_game(game, scrape_shifts, data_format="pandas")
+    if result is None:
+        raise ValueError("scraped pandas but received no result")
+    return result
 
 
 def scrape_games_for_frames(games: List[str], scrape_shifts: bool):
