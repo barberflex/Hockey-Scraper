@@ -2,25 +2,17 @@
 Functions to scrape by season, games, and date range
 """
 
-import hockey_scraper.json_schedule as json_schedule
-import hockey_scraper.game_scraper as game_scraper
-import hockey_scraper.shared as shared
+import random
+
 import pandas as pd
 
-from typing import List, Optional
-from typing_extensions import TypedDict
+import hockey_scraper.nhl.game_scraper as game_scraper
+import hockey_scraper.nhl.json_schedule as json_schedule
+import hockey_scraper.utils.shared as shared
 
 # This hold the scraping errors in a string format.
 # This may seem pointless but I have a personal reason for it (I think...)
 errors = ""
-
-# TODO(barberflex): Clean this up and make it clear which functions you should use
-
-
-class ScrapeResult(TypedDict):
-    pbp: pd.DataFrame
-    shifts: Optional[pd.DataFrame]
-    error: Optional[str]
 
 
 def print_errors():
@@ -119,7 +111,7 @@ def scrape_date_range(
     data_format="csv",
     preseason=False,
     rescrape=False,
-    docs_dir=None,
+    docs_dir=False,
 ):
     """
     Scrape games in given date range
@@ -132,7 +124,9 @@ def scrape_date_range(
                       This is may or may not work!!! I don't give a shit.
     :param rescrape: If you want to rescrape pages already scraped. Only applies if you supply a docs dir. (def. = None)
     :param docs_dir: Directory that either contains previously scraped docs or one that you want them to be deposited 
-                     in after scraping. (default is None)
+                     in after scraping. When True it'll refer to (or if needed create) such a repository in the home
+                     directory. When provided a string it'll try to use that. Here it must be a valid directory otheriwse
+                     it won't work (I won't make it for you). When False the files won't be saved.
     
     :return: Dictionary with DataFrames and errors or None
     """
@@ -163,7 +157,7 @@ def scrape_seasons(
     data_format="csv",
     preseason=False,
     rescrape=False,
-    docs_dir=None,
+    docs_dir=False,
 ):
     """
     Given list of seasons it scrapes all the seasons 
@@ -175,7 +169,9 @@ def scrape_seasons(
                       This is may or may not work!!! I don't give a shit.
     :param rescrape: If you want to rescrape pages already scraped. Only applies if you supply a docs dir.
     :param docs_dir: Directory that either contains previously scraped docs or one that you want them to be deposited 
-                     in after scraping
+                     in after scraping. When True it'll refer to (or if needed create) such a repository in the home
+                     directory. When provided a string it'll try to use that. Here it must be a valid directory otheriwse
+                     it won't work (I won't make it for you). When False the files won't be saved.
     
     :return: Dictionary with DataFrames and errors or None
     """
@@ -213,39 +209,20 @@ def scrape_seasons(
             return {"pbp": pd.concat(master_pbps), "errors": errors}
 
 
-def scrape_game(
-    game: str,
-    scrape_shifts: bool,
-    data_format: str = "csv",
-    rescrape: bool = False,
-    docs_dir: str = None,
-) -> ScrapeResult:
-    return scrape_games(
-        games=[game],
-        if_scrape_shifts=scrape_shifts,
-        data_format=data_format,
-        rescrape=rescrape,
-        docs_dir=docs_dir,
-    )
-
-
 def scrape_games(
-    games: List[str],
-    if_scrape_shifts: bool,
-    data_format: str = "csv",
-    rescrape: bool = False,
-    docs_dir: str = None,
-) -> Optional[ScrapeResult]:
+    games, if_scrape_shifts, data_format="csv", rescrape=False, docs_dir=False
+):
     """
-    Scrape a list of games.
-    You shouldn't need to scrape an arbitrary list of games. You either want a sequence, most likely defined by a date range, or a single game. If you need either of those, use the function provided here.
+    Scrape a list of games
     
     :param games: list of game_ids
     :param if_scrape_shifts: Boolean indicating whether to also scrape shifts 
     :param data_format: format you want data in - csv or pandas (csv is default)
     :param rescrape: If you want to rescrape pages already scraped. Only applies if you supply a docs dir.
     :param docs_dir: Directory that either contains previously scraped docs or one that you want them to be deposited 
-                     in after scraping
+                     in after scraping. When True it'll refer to (or if needed create) such a repository in the home
+                     directory. When provided a string it'll try to use that. Here it must be a valid directory otheriwse
+                     it won't work (I won't make it for you). When False the files won't be saved. 
     
     :return: Dictionary with DataFrames and errors or None
     """
@@ -256,27 +233,17 @@ def scrape_games(
     shared.add_dir(docs_dir)
     shared.if_rescrape(rescrape)
 
-    pbp_df, shifts_df = scrape_games_for_frames(games, if_scrape_shifts)
-
-    if data_format.lower() == "csv":
-        csv_name = "-".join(map(str, games))[:250]  # Windows file limit is 260
-        # Again, you shouldn't really need to scrape arbitrary games
-        shared.to_csv(csv_name, pbp_df, shifts_df, "nhl")
-    else:
-        return ScrapeResult(pbp=pbp_df, shifts=shifts_df, errors=errors)
-
-
-def scrape_game_to_frame(game: str, scrape_shifts: bool = False) -> ScrapeResult:
-    result = scrape_game(game, scrape_shifts, data_format="pandas")
-    if result is None:
-        raise ValueError("scraped pandas but received no result")
-    return result
-
-
-def scrape_games_for_frames(games: List[str], scrape_shifts: bool):
     # Create List of game_id's and dates
     games_list = json_schedule.get_dates(games)
 
     # Scrape pbp and shifts
-    pbp_df, shifts_df = scrape_list_of_games(games_list, scrape_shifts)
-    return pbp_df, shifts_df
+    pbp_df, shifts_df = scrape_list_of_games(games_list, if_scrape_shifts)
+
+    if data_format.lower() == "csv":
+        shared.to_csv(str(random.randint(1, 101)), pbp_df, shifts_df, "nhl")
+    else:
+        return (
+            {"pbp": pbp_df, "shifts": shifts_df, "errors": errors}
+            if if_scrape_shifts
+            else {"pbp": pbp_df, "errors": errors}
+        )

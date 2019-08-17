@@ -1,11 +1,12 @@
 """
 Functions to scrape by season, games, and date range
 """
-import hockey_scraper.shared as shared
-import hockey_scraper.nwhl.json_pbp as json_pbp
-import hockey_scraper.nwhl.html_schedule as html_schedule
-import pandas as pd
 import random
+
+import pandas as pd
+
+from . import html_schedule, json_pbp
+import hockey_scraper.utils.shared as shared
 
 # All columns for the pbp
 cols = [
@@ -93,7 +94,6 @@ def scrape_list_of_games(games):
         if not pbp_df.empty:
             pbp_dfs.append(pbp_df)
         else:
-            # Add to broken games...
             broken_games.append(game)
 
     # If not empty...

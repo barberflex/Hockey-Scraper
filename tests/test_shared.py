@@ -2,8 +2,10 @@
 
 import os
 import shutil
+
 import pytest
-from hockey_scraper import shared
+
+from hockey_scraper.utils import shared
 
 
 @pytest.fixture
@@ -23,7 +25,7 @@ def test_check_data_format():
     shared.check_data_format("pandaS")
 
     # Should raise an exception
-    with pytest.raises(shared.HaltException):
+    with pytest.raises(ValueError):
         shared.check_data_format("txt")
 
 
@@ -31,7 +33,7 @@ def test_check_valid_dates():
     """ Test if given valid date range"""
     shared.check_valid_dates("2017-10-01", "2018-01-05")
 
-    with pytest.raises(shared.HaltException):
+    with pytest.raises(ValueError):
         shared.check_valid_dates("2017-12-01", "2017-11-30")
 
 
@@ -66,7 +68,7 @@ def test_add_dir():
     # Checks when it doesn't exist
     user_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "hopefully_this_path_doesnt_exist")
     shared.add_dir(user_dir)
-    assert shared.docs_dir is None
+    assert shared.docs_dir is False
 
 
 def test_get_file(file_info):
@@ -90,4 +92,5 @@ def test_get_file(file_info):
     # Some cleanup....remove stuff created from the file directory and move back
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     shutil.rmtree("docs")
+    shutil.rmtree("csvs")
     os.chdir(original_path)

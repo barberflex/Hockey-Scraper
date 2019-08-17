@@ -1,17 +1,18 @@
 """
 Module to scrape live game info
 """
-import pandas as pd
 import datetime
-import warnings
 import time
+import warnings
 
-import hockey_scraper.json_schedule as json_schedule
-import hockey_scraper.espn_pbp as espn_pbp
-import hockey_scraper.playing_roster as playing_roster
-import hockey_scraper.game_scraper as game_scraper
-import hockey_scraper.json_pbp as json_pbp
-import hockey_scraper.shared as shared
+import pandas as pd
+
+import hockey_scraper.nhl.game_scraper as game_scraper
+import hockey_scraper.nhl.json_schedule as json_schedule
+import hockey_scraper.nhl.pbp.espn_pbp as espn_pbp
+import hockey_scraper.nhl.pbp.json_pbp as json_pbp
+import hockey_scraper.nhl.playing_roster as playing_roster
+import hockey_scraper.utils.shared as shared
 
 
 def set_docs_dir(user_dir):
@@ -30,7 +31,7 @@ def set_docs_dir(user_dir):
 
 def check_date_format(date):
     """
-    Verify the date format. If wrong raises a HaltException
+    Verify the date format. If wrong raises a ValueError
 
     :param date: User supplied date
 
@@ -39,7 +40,7 @@ def check_date_format(date):
     try:
         time.strptime(date, "%Y-%m-%d")
     except ValueError:
-        raise shared.HaltException(
+        raise ValueError(
             "Error: Incorrect format given for dates. They must be given like 'yyyy-mm-dd' "
             "(ex: '2016-10-01')."
         )
@@ -256,19 +257,11 @@ class LiveGame:
         :return: Boolean - True if over
         """
         if not prev:
-            return (
-                True
-                if self.html_game_status == self.api_game_status == "Final"
-                else False
-            )
+            return self.html_game_status == self.api_game_status == "Final"
         else:
-            return (
-                True
-                if self.prev_html_game_status == self.prev_api_game_status == "Final"
-                else False
-            )
+            return self.prev_html_game_status == self.prev_api_game_status == "Final"
 
-    def is_intermission(self, prev=False):
+    def is_intermission(self, prev: bool = False) -> bool:
         """
         Check if in intermission for both the html and json pbp. If prev=True check for the previous event
         
@@ -277,21 +270,15 @@ class LiveGame:
         :return: Boolean - True if yes
         """
         if not prev:
-            return (
-                True
-                if self.html_game_status == self.api_game_status == "Intermission"
-                else False
-            )
+            return self.html_game_status == self.api_game_status == "Intermission"
         else:
             return (
-                True
-                if self.prev_html_game_status
+                self.prev_html_game_status
                 == self.prev_api_game_status
                 == "Intermission"
-                else False
             )
 
-    def get_pbp(self):
+    def get_pbp(self) -> pd.DataFrame:
         """
         Return the pbp ensure it's not None
         
@@ -302,7 +289,7 @@ class LiveGame:
         else:
             return pd.DataFrame()
 
-    def get_shifts(self):
+    def get_shifts(self) -> pd.DataFrame:
         """
         Return the shifts ensure it's not None
 
@@ -451,7 +438,7 @@ class ScrapeLiveGames:
                 )
                 time.sleep(min_game.time_until_game())
 
-    def finished(self):
+    def finished(self) -> bool:
         """
         Check if done with all games
         
@@ -464,4 +451,4 @@ class ScrapeLiveGames:
                 finished_games += 1
 
         # If the # of finished games == # of total games
-        return True if len(self.live_games) == finished_games else False
+        return len(self.live_games) == finished_games

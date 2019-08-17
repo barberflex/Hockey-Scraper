@@ -11,6 +11,9 @@ Hockey-Scraper
 .. inclusion-marker-for-sphinx
 
 
+**Note: Due to changes in the NHL API and ESPN's website, coordinates are only scraped when using version 1.33 and higher.**
+
+
 Purpose
 -------
 
@@ -37,7 +40,6 @@ To install all you need to do is open up your terminal and type in:
 ::
 
     pip install hockey_scraper
-
 
 
 NHL Usage
@@ -98,12 +100,17 @@ The dictionary returned by setting the default argument "data_format" equal to "
 
 
 Scraped files can also be saved in a separate directory if wanted. This allows one to re-scrape games quicker as we
-don't need to retrieve them. This is done by specifying the keyword argument 'docs_dir' with the directory you want the
-files deposited in (it must exist beforehand).
+don't need to retrieve them. This is done by specifying the keyword argument 'docs_dir' equal to True to automatically
+create, store, and look in the home directory. Or you can provide your own directory where you want everything to be
+stored (it must exist beforehand).
 
 ::
 
     import hockey_scraper
+
+    # Create or try to refer to a directory in the home repository
+    # Will create a directory called 'hockey_scraper_data' in the home directory (if it doesn't exist)
+    hockey_scraper.scrape_seasons([2015, 2016], True, docs_dir=True)
 
     # Path to the given directory
     USER_PATH = "/...."

@@ -2,10 +2,11 @@
 This module contains functions to scrape the json schedule for any games or date range
 """
 
+import datetime
 import json
 import time
-import datetime
-import hockey_scraper.shared as shared
+
+import hockey_scraper.utils.shared as shared
 
 
 def get_schedule(date_from, date_to):
@@ -59,6 +60,9 @@ def get_dates(games):
     
     :return: list with game_id and corresponding date for all games
     """
+    # Convert to str to avoid issues
+    games = list(map(str, games))
+
     games.sort()
 
     year_from = str(games[0])[:4]
@@ -83,7 +87,7 @@ def get_dates(games):
     games_list = []
 
     for game in schedule:
-        if game["game_id"] in games:
+        if str(game["game_id"]) in games:
             games_list.extend([game])
 
     return games_list

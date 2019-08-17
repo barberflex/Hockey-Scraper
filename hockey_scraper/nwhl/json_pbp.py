@@ -1,10 +1,10 @@
 """
 Scrape the PBP info for a given game
 """
-import pandas as pd
-import json
 import datetime
-import hockey_scraper.shared as shared
+import json
+import pandas as pd
+import hockey_scraper.utils.shared as shared
 
 
 def get_pbp(game_id):
@@ -303,7 +303,7 @@ def scrape_pbp(game_id):
                 game_id
             )
         )
-        return None
+        return pd.DataFrame()
 
     try:
         game_df = parse_json(game_json, game_id)

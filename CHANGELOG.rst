@@ -21,3 +21,14 @@ v1.3
 ----
 
   * Added functionality to scrape NWHL data
+
+v1.31
+-----
+
+  * Added functionality to automatically create docs_dir
+  * Added folder to store csv files
+
+v1.34
+-----
+  * Fixed bug with nhl changing contents of eventTypeId
+  * Updated ESPN scraping after they changed the layout of the pages

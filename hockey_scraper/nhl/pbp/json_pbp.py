@@ -2,10 +2,12 @@
 This module contains functions to scrape the Json Play by Play for any given game
 """
 
-import pandas as pd
 import json
 from operator import itemgetter
-import hockey_scraper.shared as shared
+
+import pandas as pd
+
+import hockey_scraper.utils.shared as shared
 
 
 def get_pbp(game_id):
@@ -59,27 +61,27 @@ def change_event_name(event):
     :return: fixed event type
     """
     event_types = {
-        "PERIOD_START": "PSTR",
+        "PERIOD START": "PSTR",
         "FACEOFF": "FAC",
-        "BLOCKED_SHOT": "BLOCK",
-        "GAME_END": "GEND",
+        "BLOCKED SHOT": "BLOCK",
+        "GAME END": "GEND",
         "GIVEAWAY": "GIVE",
         "GOAL": "GOAL",
         "HIT": "HIT",
-        "MISSED_SHOT": "MISS",
-        "PERIOD_END": "PEND",
+        "MISSED SHOT": "MISS",
+        "PERIOD END": "PEND",
         "SHOT": "SHOT",
-        "STOP": "STOP",
+        "STOPPAGE": "STOP",
         "TAKEAWAY": "TAKE",
         "PENALTY": "PENL",
-        "EARLY_INT_START": "EISTR",
-        "EARLY_INT_END": "EIEND",
-        "SHOOTOUT_COMPLETE": "SOC",
+        "EARLY INT START": "EISTR",
+        "EARLY INT END": "EIEND",
+        "SHOOTOUT COMPLETE": "SOC",
         "CHALLENGE": "CHL",
-        "EMERGENCY_GOALTENDER": "EGPID",
+        "EMERGENCY GOALTENDER": "EGPID",
     }
 
-    return event_types.get(event, event)
+    return event_types.get(event.upper(), event)
 
 
 def parse_event(event):
@@ -94,7 +96,7 @@ def parse_event(event):
 
     play["event_id"] = event["about"]["eventIdx"]
     play["period"] = event["about"]["period"]
-    play["event"] = str(change_event_name(event["result"]["eventTypeId"]))
+    play["event"] = str(change_event_name(event["result"]["event"]))
     play["seconds_elapsed"] = shared.convert_to_seconds(event["about"]["periodTime"])
 
     # If there's a players key that means an event occurred on the play.
@@ -109,13 +111,8 @@ def parse_event(event):
                 )
                 play["p{}_ID".format(i + 1)] = event["players"][i]["player"]["id"]
 
-        # Coordinates aren't always there
-        try:
-            play["xC"] = event["coordinates"]["x"]
-            play["yC"] = event["coordinates"]["y"]
-        except KeyError:
-            play["xC"] = ""
-            play["yC"] = ""
+        play["xC"] = event["coordinates"].get("x")
+        play["yC"] = event["coordinates"].get("y")
 
     return play
 
@@ -145,11 +142,11 @@ def parse_json(game_json, game_id):
 
     # 'PERIOD READY' & 'PERIOD OFFICIAL'..etc aren't found in html...so get rid of them
     events_to_ignore = [
-        "PERIOD_READY",
-        "PERIOD_OFFICIAL",
-        "GAME_READY",
-        "GAME_OFFICIAL",
-        "GAME_SCHEDULED",
+        "PERIOD READY",
+        "PERIOD OFFICIAL",
+        "GAME READY",
+        "GAME OFFICIAL",
+        "GAME SCHEDULED",
     ]
 
     try:
@@ -157,7 +154,7 @@ def parse_json(game_json, game_id):
         events = [
             parse_event(play)
             for play in plays
-            if play["result"]["eventTypeId"] not in events_to_ignore
+            if play["result"]["event"].upper() not in events_to_ignore
         ]
     except Exception as e:
         shared.print_warning("Error parsing Json pbp for game {} {}".format(game_id, e))

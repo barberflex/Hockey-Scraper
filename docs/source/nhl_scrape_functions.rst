@@ -61,10 +61,11 @@ Scrape all games between a specified date range. All dates must be written in a 
 
 The option also exists to save the scraped files in another directory. This would speed up re-scraping any games since
 we already have the docs needed for it. It would also be useful if you want to grab any extra information from them
-as some of them contain a lot more information. In order to do this one must specify a directory using the keyword
-argument 'docs_dir'. If this is a valid directory, when scraping each page it would first check if it was already scraped
-(therefore saving us the time of scraping it). If it hasn't been scraped yet, it will then grab it from the source and
-save it in the given directory.
+as some of them contain a lot more information. In order to do this you can use the 'docs_dir' keyword. One can specify
+the boolean value True to either create or refer (to an already created) directory in the home directory called
+hockey_scraper data. Or you can specify the directory with the string of the path. If this is a valid directory,
+when scraping each page it would first check if it was already scraped (therefore saving us the time of scraping it).
+If it hasn't been scraped yet, it will then grab it from the source and save it in the given directory.
 
 Sometimes you may have already scraped and saved a file but you want to re-scrape it from the source and save it again
 (this may seem strange but the NHL frequently fixes mistakes so you may want to update what you have). This can be done
@@ -75,6 +76,7 @@ by setting the keyword argument rescrape equal to True.
     import hockey_scraper
 
     # Path to the given directory
+    # Can also be True if you want the scraper to take care of it
     USER_PATH = "/...."
 
     # Scrapes the 2015 & 2016 season with shifts and stores the data in a Csv file
@@ -114,55 +116,55 @@ but otherwise it will scrape as if no directory was provided.
 
 Scrape Functions
 ~~~~~~~~~~~~~~~~
-.. automodule:: hockey_scraper.scrape_functions
+.. automodule:: hockey_scraper.nhl.scrape_functions
    :members:
 
 Game Scraper
 ~~~~~~~~~~~~
-.. automodule:: hockey_scraper.game_scraper
+.. automodule:: hockey_scraper.nhl.game_scraper
    :members:
 
 Html PBP
 ~~~~~~~~
-.. automodule:: hockey_scraper.html_pbp
+.. automodule:: hockey_scraper.nhl.pbp.html_pbp
    :members:
 
 Json PBP
 ~~~~~~~~
-.. automodule:: hockey_scraper.json_pbp
+.. automodule:: hockey_scraper.nhl.pbp.json_pbp
    :members:
 
 Espn PBP
 ~~~~~~~~
-.. automodule:: hockey_scraper.espn_pbp
+.. automodule:: hockey_scraper.nhl.pbp.espn_pbp
    :members:
 
 Json Shifts
 ~~~~~~~~~~~
-.. automodule:: hockey_scraper.json_shifts
+.. automodule:: hockey_scraper.nhl.shifts.json_shifts
    :members:
 
 Html Shifts
 ~~~~~~~~~~~
-.. automodule:: hockey_scraper.html_shifts
+.. automodule:: hockey_scraper.nhl.shifts.html_shifts
    :members:
 
 Schedule
 ~~~~~~~~
-.. automodule:: hockey_scraper.json_schedule
+.. automodule:: hockey_scraper.nhl.json_schedule
    :members:
 
 Playing Roster
 ~~~~~~~~~~~~~~
-.. automodule:: hockey_scraper.playing_roster
+.. automodule:: hockey_scraper.nhl.playing_roster
    :members:
 
 Save Pages
 ~~~~~~~~~~
-.. automodule:: hockey_scraper.save_pages
+.. automodule:: hockey_scraper.utils.save_pages
    :members:
 
 Shared Functions
 ~~~~~~~~~~~~~~~~
-.. automodule:: hockey_scraper.shared
+.. automodule:: hockey_scraper.utils.shared
    :members:

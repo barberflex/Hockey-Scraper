@@ -2,10 +2,12 @@
 This module contains functions to scrape the Html Play by Play for any given game
 """
 
+import re
+
 import pandas as pd
 from bs4 import BeautifulSoup, SoupStrainer
-import re
-import hockey_scraper.shared as shared
+
+from hockey_scraper.utils import shared
 
 
 def cur_game_status(doc):
@@ -319,6 +321,9 @@ def add_score(event_dict, event, current_score, home_team):
     
     :return: None
     """
+    event_dict["Home_Score"] = current_score["Home"]
+    event_dict["Away_Score"] = current_score["Away"]
+    event_dict["score_diff"] = current_score["Home"] - current_score["Away"]
 
     # If it's a goal change the score
     if event[4] == "GOAL":
@@ -326,10 +331,6 @@ def add_score(event_dict, event, current_score, home_team):
             current_score["Home"] += 1
         else:
             current_score["Away"] += 1
-
-    event_dict["Home_Score"] = current_score["Home"]
-    event_dict["Away_Score"] = current_score["Away"]
-    event_dict["score_diff"] = current_score["Home"] - current_score["Away"]
 
 
 def get_penalty(play_description, players, home_team):
@@ -423,10 +424,13 @@ def if_valid_event(event):
     
     :return: boolean 
     """
-    if event[0] != "#" and event[4] not in ["GOFF", "EGT", "PGSTR", "PGEND", "ANTHEM"]:
-        return True
-    else:
-        return False
+    return event[0] != "#" and event[4] not in [
+        "GOFF",
+        "EGT",
+        "PGSTR",
+        "PGEND",
+        "ANTHEM",
+    ]
 
 
 def return_name_html(info):
